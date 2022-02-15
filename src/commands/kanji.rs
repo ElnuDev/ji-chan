@@ -15,28 +15,14 @@ fn random_from_string(string: &str) -> char {
 async fn display_kanji(ctx: &Context, msg: &Message, kanji: char, comment: &str) -> CommandResult {
     msg.reply(&ctx.http, format!("{}{}", kanji, comment))
         .await?;
-    // Not all character codes are covered in mistval/kanji_images.
-    // The current implementation of 404-checking requires
-    // the loading of whatever content is hosted on the URL even though
-    // only the status code (404 for Not Found and 200 for OK) is needed.
-    //
-    // This may need to be disabled in production, since it makes
-    // response times feel sluggish.
-    //
-    // Possible ways of fixing this issue:
-    // - Store the entire mistval/kanji_images dataset locally and check for file presense
-    //   (not desirable, since the remote repository may change)
-    // - Find a way to make requests but only get the status code
-    const VALIDATE_LINKS: bool = false;
     let url = format!(
         "https://raw.githubusercontent.com/mistval/kanji_images/master/gifs/{}.gif",
         format!("{:x}", kanji as i32)
     );
-    let mut link_validated = true;
-    if VALIDATE_LINKS {
-        let response = reqwest::get(&url).await?.text().await?;
-        link_validated = response != "404: Not Found";
-    }
+    let client = reqwest::Client::new();
+    let request = client.head(&url).build().unwrap();
+    let response = client.execute(request).await?.status();
+    let link_validated = response != reqwest::StatusCode::NOT_FOUND;
     msg.channel_id
         .say(
             &ctx.http,
