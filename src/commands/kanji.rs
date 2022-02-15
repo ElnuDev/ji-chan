@@ -13,15 +13,32 @@ fn random_from_string(string: &str) -> char {
 }
 
 async fn display_kanji(ctx: &Context, msg: &Message, kanji: char, comment: &str) -> CommandResult {
-    msg.reply(&ctx.http, format!(":game_die: {}{}", kanji, comment)).await?;
+    msg.reply(&ctx.http, format!("{}{}", kanji, comment)).await?;
+    // Not all character codes are covered in mistval/kanji_images.
+    // The current implementation of 404-checking requires
+    // the loading of whatever content is hosted on the URL even though
+    // only the status code (404 for Not Found and 200 for OK) is needed.
+    //
+    // This may need to be disabled in production, since it makes
+    // response times feel sluggish.
+    //
+    // Possible ways of fixing this issue:
+    // - Store the entire mistval/kanji_images dataset locally and check for file presense
+    //   (not desirable, since the remote repository may change)
+    // - Find a way to make requests but only get the status code
+    const VALIDATE_LINKS: bool = false;
     let url = format!("https://raw.githubusercontent.com/mistval/kanji_images/master/gifs/{}.gif", format!("{:x}", kanji as i32));
-    let response = reqwest::get(&url)
+    let mut link_validated = true;
+    if VALIDATE_LINKS {
+        let response = reqwest::get(&url)
         .await?
         .text()
         .await?;
-    msg.channel_id.say(&ctx.http, if response == "404: Not Found" {
+        link_validated = response != "404: Not Found";
+    }
+    msg.channel_id.say(&ctx.http, if link_validated { &url } else {
         "The stroke order diagram for this kanji is unavailable."
-    } else { &url }).await?;
+    }).await?;
     Ok(())
 }
 
@@ -107,4 +124,30 @@ async fn jlpt(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
 #[command]
 async fn hyogai(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
     random_kanji("HYOGAI", ctx, msg, args).await
+}
+
+#[command]
+async fn so(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
+    const MAX_CHARS: i32 = 4;
+    let text = args.rest();
+    if text.is_empty() {
+        msg.reply(&ctx.http, "Please provide some text you want the stroke order for.").await?;
+        return Ok(());
+    }
+    let mut displayed_characters: Vec<char> = Vec::new();
+    let mut displayed_character_count = 0;
+    for character in text.chars() {
+        if displayed_character_count >= MAX_CHARS {
+            msg.channel_id.say(&ctx.http, ":warning: Maximum number of stroke order diagrams per command reached.").await?;
+            break;
+        }
+        if character.is_whitespace() || displayed_characters.contains(&character) {
+            continue;
+        }
+        // Don't show same character twice
+        displayed_characters.push(character);
+        displayed_character_count += 1;
+        display_kanji(&ctx, &msg, character, "").await?;
+    }
+    Ok(())
 }
