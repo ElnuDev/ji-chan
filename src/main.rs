@@ -12,7 +12,7 @@ mod commands;
 
 use std::{collections::HashSet, env, sync::Arc};
 
-use commands::{kanji::*, owner::*, challenge::*};
+use commands::{challenge::*, kanji::*, owner::*};
 use serenity::{
     async_trait,
     client::bridge::gateway::ShardManager,
