@@ -70,13 +70,14 @@ async fn main() {
             owners.insert(info.owner.id);
 
             (owners, info.id)
-        },
+        }
         Err(why) => panic!("Could not access application info: {:?}", why),
     };
 
     // Create the framework
-    let framework =
-        StandardFramework::new().configure(|c| c.owners(owners).prefix(prefix)).group(&GENERAL_GROUP);
+    let framework = StandardFramework::new()
+        .configure(|c| c.owners(owners).prefix(prefix))
+        .group(&GENERAL_GROUP);
 
     let mut client = Client::builder(&token)
         .framework(framework)
@@ -92,7 +93,9 @@ async fn main() {
     let shard_manager = client.shard_manager.clone();
 
     tokio::spawn(async move {
-        tokio::signal::ctrl_c().await.expect("Could not register ctrl+c handler");
+        tokio::signal::ctrl_c()
+            .await
+            .expect("Could not register ctrl+c handler");
         shard_manager.lock().await.shutdown_all().await;
     });
 
