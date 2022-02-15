@@ -2,7 +2,11 @@
 
 # <ruby lang="ja">字<rp>(</rp><rt>じ</rt><rp>)</rp></ruby>ちゃん
 
+<img src="ji-chan.png" width="192">
+
 </div>
+
+<br>
 
 <ruby lang="ja">字<rp>(</rp><rt>じ</rt><rp>)</rp></ruby>ちゃん is the Discord bot for the Tegaki Tuesday handwriting challenge. For more information on the challenge, please visit the [website](https://tegakituesday.com).
 
