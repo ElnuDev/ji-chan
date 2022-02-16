@@ -42,7 +42,7 @@ async fn challenge(ctx: &Context, msg: &Message) -> CommandResult {
     msg.reply(
         &ctx.http,
         format!(
-            "Tegaki Tuesday #{n}: https://tegakituesday.com/{n}",
+            "Tegaki Tuesday #{n}: <https://tegakituesday.com/{n}>",
             n = get_challenge_number()
         ),
     )
