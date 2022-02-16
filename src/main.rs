@@ -43,7 +43,7 @@ impl EventHandler for Handler {
 }
 
 #[group]
-#[commands(joyo, jinmeiyo, kyoiku, jlpt, hyogai, so, challenge, submit, sleep)]
+#[commands(joyo, jinmeiyo, kyoiku, jlpt, hyogai, so, challenge, submit, images, sleep)]
 struct General;
 
 #[tokio::main]

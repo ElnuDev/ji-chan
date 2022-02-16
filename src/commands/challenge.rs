@@ -79,6 +79,21 @@ fn set_submission_data(submission_data: Vec<Value>) {
         .unwrap();
 }
 
+fn is_matching_submission(submission: &Value, msg: &Message) -> bool {
+    submission["id"].as_str().unwrap() == msg.author.id.as_u64().to_string()
+}
+
+fn to_fullwidth(string: &str) -> String {
+    let mut fullwidth = String::new();
+    for character in string.chars() {
+        fullwidth.push(match unicode_hfwidth::to_fullwidth(character) {
+            Some(character) => character,
+            None => character,
+        });
+    }
+    fullwidth
+}
+
 #[command]
 async fn challenge(ctx: &Context, msg: &Message) -> CommandResult {
     msg.reply(
@@ -114,7 +129,7 @@ async fn submit(ctx: &Context, msg: &Message) -> CommandResult {
     let mut invalid_types = false;
     let mut requires_rebuild = false;
     for (i, submission) in submission_data.iter_mut().enumerate() {
-        if &submission["id"].as_str().unwrap() == &msg.author.id.as_u64().to_string() {
+        if is_matching_submission(&submission, &msg) {
             existing_submitter = true;
             let mut images = submission["images"].as_array_mut().unwrap().clone();
             for attachment in msg.attachments.iter() {
@@ -212,5 +227,33 @@ async fn submit(ctx: &Context, msg: &Message) -> CommandResult {
         message.push_str("Sorry, your submission could not be uploaded; only **.png**, **.jpg**, and **.jpeg** files are permitted.");
     }
     msg.reply(&ctx.http, &message).await?;
+    Ok(())
+}
+
+#[command]
+async fn images(ctx: &Context, msg: &Message) -> CommandResult {
+    let submission_data = get_submission_data();
+    let images: Vec<String> = {
+        let mut images = Vec::new();
+        for submission in submission_data.iter() {
+            if is_matching_submission(&submission, &msg) {
+                for image in submission["images"].as_array().unwrap().iter() {
+                    images.push(String::from(image.as_str().unwrap()));
+                }
+                break;
+            }
+        }
+        images
+    };
+    let challenge_number = get_challenge_number();
+    if images.len() == 0 {
+        msg.reply(&ctx.http, format!("You haven't submitted anything for Tegaki Tuesday #{}.", challenge_number)).await?;
+        return Ok(())
+    }
+    let mut message = String::from(format!("Your submission images for Tegaki Tuesday #{}:\n", challenge_number));
+    for (i, image) in images.iter().enumerate() {
+        message.push_str(&format!("（{}）<https://tegakituesday.com/{}/{}>\n", to_fullwidth(&(i + 1).to_string()), challenge_number, image));
+    }
+    msg.reply(&ctx.http, message).await?;
     Ok(())
 }
