@@ -11,8 +11,7 @@ use std::fs::File;
 use std::fs::OpenOptions;
 use std::io::Read;
 use std::io::Write;
-// Required for rebuilding site
-// use std::process::Command;
+use std::process::Command;
 
 use slug::slugify;
 
@@ -188,8 +187,7 @@ async fn submit(ctx: &Context, msg: &Message) -> CommandResult {
         if invalid_types {
             message.push_str("\nSome of your attachments could not be uploaded; only **.png**, **.jpg**, and **.jpeg** files are permitted.");
         }
-    // Currently untested, and thus commented
-    // Command::new("hugo").current_dir(&hugo_path).spawn().expect("Failed to rebuild site");
+        Command::new("hugo").current_dir(&hugo_path).spawn().expect("Failed to rebuild site");
     } else if invalid_types {
         message.push_str("Sorry, your submission could not be uploaded; only **.png**, **.jpg**, and **.jpeg** files are permitted.");
     }
