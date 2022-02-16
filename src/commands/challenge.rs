@@ -36,6 +36,49 @@ fn get_challenge_number() -> i32 {
     max
 }
 
+fn get_hugo_path() -> String {
+    env::var("HUGO").unwrap()
+}
+
+fn get_submission_images_dir() -> String {
+    format!("{}/assets/{}", get_hugo_path(), get_challenge_number())
+}
+
+fn get_submission_data_path() -> String {
+    format!("{}/data/challenges/{}.json", get_hugo_path(), get_challenge_number())
+}
+
+fn get_submission_data() -> Vec<Value> {
+    let submission_data_path = get_submission_data_path();
+    let submission_data_json = match File::open(&submission_data_path) {
+        Ok(mut file) => {
+            let mut json = String::new();
+            file.read_to_string(&mut json).unwrap();
+            json
+        }
+        Err(ref e) if e.kind() == std::io::ErrorKind::NotFound => {
+            let mut file = File::create(&submission_data_path).unwrap();
+            file.write_all(b"[]").unwrap();
+            file.flush().unwrap();
+            String::from("[]")
+        }
+        Err(_) => panic!("Failed to open submission data file"),
+    };
+    let mut submission_data: Value = serde_json::from_str(&submission_data_json).unwrap();
+    submission_data.as_array_mut().unwrap().clone()
+}
+
+fn set_submission_data(submission_data: Vec<Value>) {
+    let submission_data: Value = submission_data.into();
+    let mut submission_data_file = OpenOptions::new()
+        .write(true)
+        .truncate(true)
+        .open(get_submission_data_path()).unwrap();
+    submission_data_file
+        .write_all(serde_json::to_string_pretty(&submission_data).unwrap().as_bytes())
+        .unwrap();
+}
+
 #[command]
 async fn challenge(ctx: &Context, msg: &Message) -> CommandResult {
     msg.reply(
@@ -58,31 +101,15 @@ async fn submit(ctx: &Context, msg: &Message) -> CommandResult {
             .await?;
         return Ok(());
     }
-    let hugo_path = env::var("HUGO").unwrap();
+    let hugo_path = get_hugo_path();
     let challenge_number = get_challenge_number();
-    let submission_images_dir = format!("{}/assets/{}", hugo_path, challenge_number);
+    let submission_images_dir = get_submission_images_dir();
     
     // Ensure that submission_images_dir exists
     let path = std::path::Path::new(&submission_images_dir);
     std::fs::create_dir_all(path)?;
     
-    let submission_data_path = format!("{}/data/challenges/{}.json", hugo_path, challenge_number);
-    let submission_data_json = match File::open(&submission_data_path) {
-        Ok(mut file) => {
-            let mut json = String::new();
-            file.read_to_string(&mut json)?;
-            json
-        }
-        Err(ref e) if e.kind() == std::io::ErrorKind::NotFound => {
-            let mut file = File::create(&submission_data_path)?;
-            file.write_all(b"[]")?;
-            file.flush()?;
-            String::from("[]")
-        }
-        Err(_) => panic!("Failed to open submission data file"),
-    };
-    let mut submission_data: Value = serde_json::from_str(&submission_data_json).unwrap();
-    let mut submission_data = submission_data.as_array_mut().unwrap().clone();
+    let mut submission_data = get_submission_data();
     let mut existing_submitter = false;
     let mut invalid_types = false;
     let mut requires_rebuild = false;
@@ -173,14 +200,7 @@ async fn submit(ctx: &Context, msg: &Message) -> CommandResult {
         );
         submission_data.push(submitter_data.into());
     }
-    let submission_data: Value = submission_data.into();
-    let mut submission_data_file = OpenOptions::new()
-        .write(true)
-        .truncate(true)
-        .open(&submission_data_path)?;
-    submission_data_file
-        .write_all(serde_json::to_string_pretty(&submission_data)?.as_bytes())
-        .unwrap();
+    set_submission_data(submission_data);
     let mut message = String::new();
     if requires_rebuild {
         message.push_str(&format!("Thank you for submitting! You can view your submission at <https://tegakituesday.com/{}>", challenge_number));
