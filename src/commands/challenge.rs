@@ -14,7 +14,7 @@ use std::io::Write;
 // Required for rebuilding site
 // use std::process::Command;
 
-use slugify::slugify;
+use slug::slugify;
 
 fn get_challenge_number() -> i32 {
     let challenge_dir = format!("{}/content/challenges", env::var("HUGO").unwrap());
@@ -105,7 +105,7 @@ async fn submit(ctx: &Context, msg: &Message) -> CommandResult {
                 let file_name = format!(
                     "{}-{}-{}-{}.{}",
                     i + 1,
-                    slugify!(&msg.author.name),
+                    slugify(&msg.author.name),
                     msg.author.discriminator,
                     images.len() + 1,
                     extension
@@ -146,7 +146,7 @@ async fn submit(ctx: &Context, msg: &Message) -> CommandResult {
             let file_name = format!(
                 "{}-{}-{}{}.{}",
                 submission_data.len() + 1,
-                slugify!(&msg.author.name),
+                slugify(&msg.author.name),
                 msg.author.discriminator,
                 if images.len() == 0 {
                     String::from("")
