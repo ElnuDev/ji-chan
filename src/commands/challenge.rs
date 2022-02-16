@@ -62,6 +62,11 @@ async fn submit(ctx: &Context, msg: &Message) -> CommandResult {
     let hugo_path = env::var("HUGO").unwrap();
     let challenge_number = get_challenge_number();
     let submission_images_dir = format!("{}/assets/{}", hugo_path, challenge_number);
+    
+    // Ensure that submission_images_dir exists
+    let path = std::path::Path::new(&submission_images_dir);
+    std::fs::create_dir_all(path)?;
+    
     let submission_data_path = format!("{}/data/challenges/{}.json", hugo_path, challenge_number);
     let submission_data_json = match File::open(&submission_data_path) {
         Ok(mut file) => {
@@ -115,6 +120,7 @@ async fn submit(ctx: &Context, msg: &Message) -> CommandResult {
                 let mut image_file =
                     File::create(format!("{}/{}", submission_images_dir, file_name))?;
                 image_file.write_all(&image)?;
+                image_file.flush()?;
             }
             submission["images"] = images.into();
             break;
@@ -159,6 +165,7 @@ async fn submit(ctx: &Context, msg: &Message) -> CommandResult {
             let image = reqwest::get(&attachment.url).await?.bytes().await?;
             let mut image_file = File::create(format!("{}/{}", submission_images_dir, file_name))?;
             image_file.write_all(&image)?;
+            image_file.flush()?;
         }
         submitter_data.insert(String::from("images"), images.into());
         submitter_data.insert(
