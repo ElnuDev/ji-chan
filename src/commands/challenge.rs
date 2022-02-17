@@ -1,4 +1,4 @@
-use serenity::framework::standard::{macros::command, CommandResult};
+use serenity::framework::standard::{macros::command, Args, CommandResult};
 use serenity::model::prelude::*;
 use serenity::prelude::*;
 
@@ -12,6 +12,7 @@ use std::fs::OpenOptions;
 use std::io::Read;
 use std::io::Write;
 use std::process::Command;
+use std::path::Path;
 
 use slug::slugify;
 
@@ -121,7 +122,7 @@ async fn submit(ctx: &Context, msg: &Message) -> CommandResult {
     let submission_images_dir = get_submission_images_dir();
     
     // Ensure that submission_images_dir exists
-    let path = std::path::Path::new(&submission_images_dir);
+    let path = Path::new(&submission_images_dir);
     std::fs::create_dir_all(path)?;
     
     let mut submission_data = get_submission_data();
@@ -226,7 +227,7 @@ async fn submit(ctx: &Context, msg: &Message) -> CommandResult {
     } else if invalid_types {
         message.push_str("Sorry, your submission could not be uploaded; only **.png**, **.jpg**, and **.jpeg** files are permitted.");
     }
-    msg.reply(&ctx.http, &message).await?;
+    msg.reply(&ctx.http, message).await?;
     Ok(())
 }
 
@@ -255,5 +256,95 @@ async fn images(ctx: &Context, msg: &Message) -> CommandResult {
         message.push_str(&format!("（{}）<https://tegakituesday.com/{}/{}>\n", to_fullwidth(&(i + 1).to_string()), challenge_number, image));
     }
     msg.reply(&ctx.http, message).await?;
+    Ok(())
+}
+
+#[command]
+// imageDelete instead of image_delete to keep command naming from Python version
+#[allow(non_snake_case)]
+async fn imageDelete(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
+    let number;
+    match args.single::<i32>() {
+        Ok(value) => number = value,
+        Err(_) => {
+            msg.reply(&ctx.http, format!("Please provide the image number you want to delete. You can get a list of your submitted images using `{}images`.", env::var("PREFIX").unwrap())).await?;
+            return Ok(())
+        }
+    }
+    if number < 1 {
+        msg.reply(&ctx.http, "That isn't a valid image number. Image numbers start at 1.").await?;
+        return Ok(());
+    }
+    let challenge_number = get_challenge_number();
+    let mut submission_data = get_submission_data();
+    for (i, submission) in submission_data.iter_mut().enumerate() {
+        if !is_matching_submission(&submission, &msg) {
+            break;
+        }
+        let mut images = submission["images"].as_array().unwrap().clone();
+        let image_count = images.len();
+        if image_count < number.try_into().unwrap() {
+            msg.reply(&ctx.http, if image_count == 0 {
+                // This is an edge case that should never happen.
+                // In this scenario, there is submission data with an empty image list.
+                // Submission data should be deleted uppon imageDelete if there are no images remaining.
+                format!("You haven't submitted anything for Tegaki Tuesday #{}.", challenge_number)
+            } else {
+                format!("That image number doesn't exist, you only have {} image{}.", image_count, if image_count == 1 { "" } else { "s" })
+            }).await?;
+            return Ok(());
+        }
+        let index = number as usize - 1;
+        let image = images[index].as_str().unwrap().to_owned();
+        let submission_images_dir = get_submission_images_dir();
+        let image_path = format!("{}/{}", submission_images_dir, image);
+        match fs::remove_file(image_path) {
+            Ok(_) => (),
+            // No need to worry about if the file is already missing
+            Err(ref e) if e.kind() == std::io::ErrorKind::NotFound => (),
+            Err(_) => panic!("Failed to remove file")
+        };
+        let mut message = String::from(format!("Deleted **{}** from your submission.", image));
+        if images.len() == 1 {
+            message.push_str(" As there are no more images left attached to your submission, it has been deleted.");
+            submission_data.remove(i);
+        } else {
+            images.remove(index);
+            // One must rename all of the submitted images to prevent overwrites.
+            // Consider the following scenario:
+            // The submissions are ["bob-1234.png", "bob-1234-2.png"]
+            // Bob uses the command imageDelete 1
+            // The submissions become ["bob-1234-2.png"]
+            // Bob makes a second submission
+            // The submissions become ["bob-1234-2.png", "bob-1234-2.png"]
+            // The original bob-1234-2.png gets overwriten,
+            // and both submissions end up pointing to the same image.
+            // In order to prevent this, images need to be renamed according to their index.
+            for (j, image) in images.iter_mut().enumerate() {
+                let old = image.as_str().unwrap();
+                let from = format!("{}/{}", submission_images_dir, old);
+                let new = format!(
+                    "{}-{}-{}{}.{}",
+                    i + 1,
+                    slugify(&msg.author.name),
+                    msg.author.discriminator,
+                    if j == 0 {
+                        String::from("")
+                    } else {
+                        format!("-{}", j + 1)
+                    },
+                    Path::new(old).extension().unwrap().to_str().unwrap()
+                );
+                let to = format!("{}/{}", submission_images_dir, new);
+                fs_extra::file::move_file(from, to, &fs_extra::file::CopyOptions::default()).unwrap();
+                *image = new.into();
+            }
+            submission["images"] = images.into();
+        }
+        set_submission_data(submission_data);
+        msg.reply(&ctx.http, message).await?;
+        return Ok(());
+    }
+    msg.reply(&ctx.http, format!("You haven't submitted anything for Tegaki Tuesday #{}.", challenge_number)).await?;
     Ok(())
 }
