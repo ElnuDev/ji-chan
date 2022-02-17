@@ -86,10 +86,9 @@ async fn setSubmissionChannel(ctx: &Context, msg: &Message) -> CommandResult {
         guild_data.insert(guild, json!({ "submissionChannel": channel }));
     }
     set_guild_data(guild_data);
-    // TODO: Add guild name in message
     msg.reply(
         &ctx.http,
-        format!("Submission channel set to <#{}>.", msg.channel_id),
+        format!("Submission channel for **{}** set to <#{}>.", msg.guild(&ctx).await.unwrap().name, msg.channel_id),
     )
     .await?;
     Ok(())
