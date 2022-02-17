@@ -56,7 +56,8 @@ impl EventHandler for Handler {
     imageDelete,
     help,
     sleep,
-    setSubmissionChannel
+    setSubmissionChannel,
+    setAnnouncementRole
 )]
 struct General;
 

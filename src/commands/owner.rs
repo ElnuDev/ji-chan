@@ -1,4 +1,4 @@
-use serenity::framework::standard::{macros::command, CommandResult};
+use serenity::framework::standard::{macros::command, Args, CommandResult};
 use serenity::model::prelude::*;
 use serenity::prelude::*;
 
@@ -91,5 +91,35 @@ async fn setSubmissionChannel(ctx: &Context, msg: &Message) -> CommandResult {
         format!("Submission channel for **{}** set to <#{}>.", msg.guild(&ctx).await.unwrap().name, msg.channel_id),
     )
     .await?;
+    Ok(())
+}
+
+#[command]
+#[owners_only]
+#[allow(non_snake_case)]
+async fn setAnnouncementRole(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
+    let role;
+    match args.single::<u64>() {
+        Ok(id) => role = id.to_string(),
+        Err(_) => {
+            msg.reply(&ctx.http, "Please provide an announcement role ID.").await?;
+            return Ok(());
+        }
+    }
+    let mut guild_data = get_guild_data();
+    let guild = msg.guild_id.unwrap().as_u64().to_string();
+    if guild_data.contains_key(&guild) {
+        let mut current_guild_data = guild_data[&guild].as_object().unwrap().clone();
+        if current_guild_data.contains_key("announcementRole") {
+            current_guild_data["announcementRole"] = role.into();
+        } else {
+            current_guild_data.insert(String::from("announcementRole"), role.into());
+        }
+        guild_data[&guild] = current_guild_data.into();
+    } else {
+        guild_data.insert(guild, json!({ "announcementRole": role }));
+    }
+    set_guild_data(guild_data);
+    msg.reply(&ctx.http, "Announcement role set.").await?;
     Ok(())
 }
