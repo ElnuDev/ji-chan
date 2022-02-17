@@ -16,7 +16,7 @@ use crate::ShardManagerContainer;
 
 const GUILD_DATA_PATH: &str = "guilds.json";
 
-fn get_guild_data() -> Map<String, Value> {
+pub fn get_guild_data() -> Map<String, Value> {
     let guild_data_json = match File::open(GUILD_DATA_PATH) {
         Ok(mut file) => {
             let mut json = String::new();

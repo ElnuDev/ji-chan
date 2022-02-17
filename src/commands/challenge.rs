@@ -16,6 +16,8 @@ use std::process::Command;
 
 use slug::slugify;
 
+use crate::commands::owner::get_guild_data;
+
 fn get_challenge_number() -> i32 {
     let challenge_dir = format!("{}/content/challenges", env::var("HUGO").unwrap());
     let paths = fs::read_dir(challenge_dir).unwrap();
@@ -121,6 +123,17 @@ async fn challenge(ctx: &Context, msg: &Message) -> CommandResult {
 async fn submit(ctx: &Context, msg: &Message) -> CommandResult {
     // TODO: The code for this command needs to be refactored,
     // there are large duplicated sections that need to be merged somehow.
+    let guild_data = get_guild_data();
+    let guild = msg.guild_id.unwrap().as_u64().to_string();
+    if !guild_data.contains_key(&guild) {
+        msg.reply(&ctx.http, "Submissions aren't enabled for this server yet.").await?;
+        return Ok(());
+    }
+    let submission_channel = &guild_data[&guild].as_object().unwrap()["submissionChannel"].as_str().unwrap();
+    if submission_channel != &msg.channel_id.as_u64().to_string() {
+        msg.reply(&ctx.http, format!("Sorry, submissions aren't permitted here. Please go to <#{}>. Thanks!", submission_channel)).await?;
+        return Ok(());
+    }
     if msg.attachments.len() == 0 {
         msg.reply(&ctx.http, "Please attach at least one image.")
             .await?;
