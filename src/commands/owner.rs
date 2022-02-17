@@ -9,8 +9,10 @@ use std::fs::File;
 use std::fs::OpenOptions;
 use std::io::Read;
 use std::io::Write;
+use std::env;
 
 use crate::ShardManagerContainer;
+use crate::commands::challenge::get_challenge_number;
 
 const GUILD_DATA_PATH: &str = "guilds.json";
 
@@ -160,4 +162,23 @@ async fn send(ctx: &Context, msg: &Message, message: &str, ping: bool, pin: bool
 #[owners_only]
 async fn announce(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
     send(ctx, msg, args.rest(), true, true).await
+}
+
+#[command]
+#[owners_only]
+async fn announceChallenge(ctx: &Context, msg: &Message) -> CommandResult {
+    let challenge_number = get_challenge_number();
+    let message = format!("Welcome to the **{n}{th}** weekly **Tegaki Tuesday** (手書きの火曜日) handwriting challenge! :pen_fountain: The prompt is available in both Japanese and English on the website at <https://tegakituesday/{n}>.
+
+You can make submissions in both languages, but please submit in your target language first. Submissions can be submitted by uploading the image to this channel along with the `{p}submit` command. By submitting, you agree to having your work posted to the website under the Attribution-ShareAlike 4.0 Unported (CC BY-SA 4.0) license, attributed to your Discord account. (<https://creativecommons.org/licenses/by-sa/4.0>).",
+        n = challenge_number,
+        th = match challenge_number % 10 {
+            1 => "ˢᵗ",
+            2 => "ⁿᵈ",
+            3 => "ʳᵈ",
+            _ => "ᵗʰ"
+        },
+        p = env::var("PREFIX").unwrap()
+    );
+    send(ctx, msg, &message, true, true).await
 }

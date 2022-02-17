@@ -18,7 +18,7 @@ use slug::slugify;
 
 use crate::commands::owner::get_guild_data;
 
-fn get_challenge_number() -> i32 {
+pub fn get_challenge_number() -> i32 {
     let challenge_dir = format!("{}/content/challenges", env::var("HUGO").unwrap());
     let paths = fs::read_dir(challenge_dir).unwrap();
     let mut max = 0;
