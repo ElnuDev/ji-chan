@@ -11,8 +11,8 @@ use std::fs::File;
 use std::fs::OpenOptions;
 use std::io::Read;
 use std::io::Write;
-use std::process::Command;
 use std::path::Path;
+use std::process::Command;
 
 use slug::slugify;
 
@@ -46,7 +46,11 @@ fn get_submission_images_dir() -> String {
 }
 
 fn get_submission_data_path() -> String {
-    format!("{}/data/challenges/{}.json", get_hugo_path(), get_challenge_number())
+    format!(
+        "{}/data/challenges/{}.json",
+        get_hugo_path(),
+        get_challenge_number()
+    )
 }
 
 fn get_submission_data() -> Vec<Value> {
@@ -74,9 +78,14 @@ fn set_submission_data(submission_data: Vec<Value>) {
     let mut submission_data_file = OpenOptions::new()
         .write(true)
         .truncate(true)
-        .open(get_submission_data_path()).unwrap();
+        .open(get_submission_data_path())
+        .unwrap();
     submission_data_file
-        .write_all(serde_json::to_string_pretty(&submission_data).unwrap().as_bytes())
+        .write_all(
+            serde_json::to_string_pretty(&submission_data)
+                .unwrap()
+                .as_bytes(),
+        )
         .unwrap();
 }
 
@@ -120,11 +129,11 @@ async fn submit(ctx: &Context, msg: &Message) -> CommandResult {
     let hugo_path = get_hugo_path();
     let challenge_number = get_challenge_number();
     let submission_images_dir = get_submission_images_dir();
-    
+
     // Ensure that submission_images_dir exists
     let path = Path::new(&submission_images_dir);
     std::fs::create_dir_all(path)?;
-    
+
     let mut submission_data = get_submission_data();
     let mut existing_submitter = false;
     let mut invalid_types = false;
@@ -223,7 +232,10 @@ async fn submit(ctx: &Context, msg: &Message) -> CommandResult {
         if invalid_types {
             message.push_str("\nSome of your attachments could not be uploaded; only **.png**, **.jpg**, and **.jpeg** files are permitted.");
         }
-        Command::new("hugo").current_dir(&hugo_path).spawn().expect("Failed to rebuild site");
+        Command::new("hugo")
+            .current_dir(&hugo_path)
+            .spawn()
+            .expect("Failed to rebuild site");
     } else if invalid_types {
         message.push_str("Sorry, your submission could not be uploaded; only **.png**, **.jpg**, and **.jpeg** files are permitted.");
     }
@@ -248,12 +260,27 @@ async fn images(ctx: &Context, msg: &Message) -> CommandResult {
     };
     let challenge_number = get_challenge_number();
     if images.len() == 0 {
-        msg.reply(&ctx.http, format!("You haven't submitted anything for Tegaki Tuesday #{}.", challenge_number)).await?;
-        return Ok(())
+        msg.reply(
+            &ctx.http,
+            format!(
+                "You haven't submitted anything for Tegaki Tuesday #{}.",
+                challenge_number
+            ),
+        )
+        .await?;
+        return Ok(());
     }
-    let mut message = String::from(format!("Your submission images for Tegaki Tuesday #{}:\n", challenge_number));
+    let mut message = String::from(format!(
+        "Your submission images for Tegaki Tuesday #{}:\n",
+        challenge_number
+    ));
     for (i, image) in images.iter().enumerate() {
-        message.push_str(&format!("（{}）<https://tegakituesday.com/{}/{}>\n", to_fullwidth(&(i + 1).to_string()), challenge_number, image));
+        message.push_str(&format!(
+            "（{}）<https://tegakituesday.com/{}/{}>\n",
+            to_fullwidth(&(i + 1).to_string()),
+            challenge_number,
+            image
+        ));
     }
     msg.reply(&ctx.http, message).await?;
     Ok(())
@@ -268,11 +295,15 @@ async fn imageDelete(ctx: &Context, msg: &Message, mut args: Args) -> CommandRes
         Ok(value) => number = value,
         Err(_) => {
             msg.reply(&ctx.http, format!("Please provide the image number you want to delete. You can get a list of your submitted images using `{}images`.", env::var("PREFIX").unwrap())).await?;
-            return Ok(())
+            return Ok(());
         }
     }
     if number < 1 {
-        msg.reply(&ctx.http, "That isn't a valid image number. Image numbers start at 1.").await?;
+        msg.reply(
+            &ctx.http,
+            "That isn't a valid image number. Image numbers start at 1.",
+        )
+        .await?;
         return Ok(());
     }
     let challenge_number = get_challenge_number();
@@ -284,14 +315,25 @@ async fn imageDelete(ctx: &Context, msg: &Message, mut args: Args) -> CommandRes
         let mut images = submission["images"].as_array().unwrap().clone();
         let image_count = images.len();
         if image_count < number.try_into().unwrap() {
-            msg.reply(&ctx.http, if image_count == 0 {
-                // This is an edge case that should never happen.
-                // In this scenario, there is submission data with an empty image list.
-                // Submission data should be deleted uppon imageDelete if there are no images remaining.
-                format!("You haven't submitted anything for Tegaki Tuesday #{}.", challenge_number)
-            } else {
-                format!("That image number doesn't exist, you only have {} image{}.", image_count, if image_count == 1 { "" } else { "s" })
-            }).await?;
+            msg.reply(
+                &ctx.http,
+                if image_count == 0 {
+                    // This is an edge case that should never happen.
+                    // In this scenario, there is submission data with an empty image list.
+                    // Submission data should be deleted uppon imageDelete if there are no images remaining.
+                    format!(
+                        "You haven't submitted anything for Tegaki Tuesday #{}.",
+                        challenge_number
+                    )
+                } else {
+                    format!(
+                        "That image number doesn't exist, you only have {} image{}.",
+                        image_count,
+                        if image_count == 1 { "" } else { "s" }
+                    )
+                },
+            )
+            .await?;
             return Ok(());
         }
         let index = number as usize - 1;
@@ -302,7 +344,7 @@ async fn imageDelete(ctx: &Context, msg: &Message, mut args: Args) -> CommandRes
             Ok(_) => (),
             // No need to worry about if the file is already missing
             Err(ref e) if e.kind() == std::io::ErrorKind::NotFound => (),
-            Err(_) => panic!("Failed to remove file")
+            Err(_) => panic!("Failed to remove file"),
         };
         let mut message = String::from(format!("Deleted **{}** from your submission.", image));
         if images.len() == 1 {
@@ -336,7 +378,8 @@ async fn imageDelete(ctx: &Context, msg: &Message, mut args: Args) -> CommandRes
                     Path::new(old).extension().unwrap().to_str().unwrap()
                 );
                 let to = format!("{}/{}", submission_images_dir, new);
-                fs_extra::file::move_file(from, to, &fs_extra::file::CopyOptions::default()).unwrap();
+                fs_extra::file::move_file(from, to, &fs_extra::file::CopyOptions::default())
+                    .unwrap();
                 *image = new.into();
             }
             submission["images"] = images.into();
@@ -345,6 +388,13 @@ async fn imageDelete(ctx: &Context, msg: &Message, mut args: Args) -> CommandRes
         msg.reply(&ctx.http, message).await?;
         return Ok(());
     }
-    msg.reply(&ctx.http, format!("You haven't submitted anything for Tegaki Tuesday #{}.", challenge_number)).await?;
+    msg.reply(
+        &ctx.http,
+        format!(
+            "You haven't submitted anything for Tegaki Tuesday #{}.",
+            challenge_number
+        ),
+    )
+    .await?;
     Ok(())
 }
