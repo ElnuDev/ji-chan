@@ -12,7 +12,7 @@ mod commands;
 
 use std::{collections::HashSet, env, sync::Arc};
 
-use commands::{challenge::*, kanji::*, owner::*};
+use commands::{challenge::*, kanji::*, meta::*, owner::*};
 use serenity::{
     async_trait,
     client::bridge::gateway::ShardManager,
@@ -54,6 +54,7 @@ impl EventHandler for Handler {
     submit,
     images,
     imageDelete,
+    help,
     sleep
 )]
 struct General;
