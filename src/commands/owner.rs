@@ -123,3 +123,41 @@ async fn setAnnouncementRole(ctx: &Context, msg: &Message, mut args: Args) -> Co
     msg.reply(&ctx.http, "Announcement role set.").await?;
     Ok(())
 }
+
+async fn send(ctx: &Context, msg: &Message, message: &str, ping: bool, pin: bool) -> CommandResult {
+    let guild_data = get_guild_data();
+    let mut announcements_count = 0;
+    for (_guild, data) in guild_data.iter() {
+        let data = data.as_object().unwrap();
+        if !data.contains_key("submissionChannel") {
+            continue;
+        }
+        let channel = ChannelId(data["submissionChannel"].as_str().unwrap().parse::<u64>().unwrap());
+        let mut message_to_send = String::from("");
+        if ping && data.contains_key("announcementRole") {
+            message_to_send.push_str(&format!("<@&{}> ", data["announcementRole"].as_str().unwrap()));
+        }
+        message_to_send.push_str(message);
+        let sent_message = channel.send_message(&ctx.http, |e| {
+            e.content(message_to_send);
+            e
+        }).await.unwrap();
+        if pin {
+            // No need to do anything on error,
+            // it just means we don't have pin permissions
+            match sent_message.pin(&ctx.http).await {
+                Ok(_) => (),
+                Err(_) => ()
+            };
+        }
+        announcements_count += 1;
+    }
+    msg.reply(&ctx.http, format!("Announced to {} server{}!", announcements_count, if announcements_count == 1 { "" } else { "s" })).await?;
+    Ok(())
+}
+
+#[command]
+#[owners_only]
+async fn announce(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
+    send(ctx, msg, args.rest(), true, true).await
+}

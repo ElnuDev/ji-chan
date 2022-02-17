@@ -57,7 +57,8 @@ impl EventHandler for Handler {
     help,
     sleep,
     setSubmissionChannel,
-    setAnnouncementRole
+    setAnnouncementRole,
+    announce
 )]
 struct General;
 
