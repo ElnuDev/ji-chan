@@ -2,9 +2,9 @@ use serenity::framework::standard::{macros::command, CommandResult};
 use serenity::model::prelude::*;
 use serenity::prelude::*;
 
+use serde_json::json;
 use serde_json::Map;
 use serde_json::Value;
-use serde_json::json;
 use std::fs::File;
 use std::fs::OpenOptions;
 use std::io::Read;
@@ -83,12 +83,14 @@ async fn setSubmissionChannel(ctx: &Context, msg: &Message) -> CommandResult {
         }
         guild_data[&guild] = current_guild_data.into();
     } else {
-        guild_data.insert(guild, json!({
-            "submissionChannel": channel
-        }));
+        guild_data.insert(guild, json!({ "submissionChannel": channel }));
     }
     set_guild_data(guild_data);
     // TODO: Add guild name in message
-    msg.reply(&ctx.http, format!("Submission channel set to <#{}>.", msg.channel_id)).await?;
+    msg.reply(
+        &ctx.http,
+        format!("Submission channel set to <#{}>.", msg.channel_id),
+    )
+    .await?;
     Ok(())
 }
