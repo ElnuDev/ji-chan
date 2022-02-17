@@ -166,6 +166,7 @@ async fn announce(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
 
 #[command]
 #[owners_only]
+#[allow(non_snake_case)]
 async fn announceChallenge(ctx: &Context, msg: &Message) -> CommandResult {
     let challenge_number = get_challenge_number();
     let message = format!("Welcome to the **{n}{th}** weekly **Tegaki Tuesday** (手書きの火曜日) handwriting challenge! :pen_fountain: The prompt is available in both Japanese and English on the website at <https://tegakituesday/{n}>.
