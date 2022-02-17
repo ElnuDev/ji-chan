@@ -77,7 +77,13 @@ async fn setSubmissionChannel(ctx: &Context, msg: &Message) -> CommandResult {
     let guild = msg.guild_id.unwrap().as_u64().to_string();
     let channel = msg.channel_id.as_u64().to_string();
     if guild_data.contains_key(&guild) {
-        guild_data[&guild].as_object_mut().unwrap()["submissionChannel"] = channel.into();
+        let mut current_guild_data = guild_data[&guild].as_object().unwrap().clone();
+        if current_guild_data.contains_key("submissionChannel") {
+            current_guild_data["submissionChannel"] = channel.into();
+        } else {
+            current_guild_data.insert(String::from("submissionChannel"), channel.into());
+        }
+        guild_data[&guild] = current_guild_data.into();
     } else {
         guild_data.insert(guild, json!({
             "submissionChannel": channel
