@@ -332,7 +332,7 @@ async fn imageDelete(ctx: &Context, msg: &Message, mut args: Args) -> CommandRes
     let mut submission_data = get_submission_data();
     for (i, submission) in submission_data.iter_mut().enumerate() {
         if !is_matching_submission(&submission, &msg) {
-            break;
+            continue;
         }
         let mut images = submission["images"].as_array().unwrap().clone();
         let image_count = images.len();
