@@ -14,16 +14,20 @@ use std::env;
 use crate::ShardManagerContainer;
 use crate::commands::challenge::get_challenge_number;
 
+fn get_guild_data_path() -> String {
+    env::var("GUILD_DATA").unwrap()
+}
+
 pub fn get_guild_data() -> Map<String, Value> {
-    let guild_data_path = env::var("GUILD_DATA").unwrap();
-    let guild_data_json = match File::open(guild_data_path) {
+    let guild_data_path = get_guild_data_path();
+    let guild_data_json = match File::open(&guild_data_path) {
         Ok(mut file) => {
             let mut json = String::new();
             file.read_to_string(&mut json).unwrap();
             json
         }
         Err(ref e) if e.kind() == std::io::ErrorKind::NotFound => {
-            let mut file = File::create(guild_data_path).unwrap();
+            let mut file = File::create(&guild_data_path).unwrap();
             file.write_all(b"{}").unwrap();
             file.flush().unwrap();
             String::from("{}")
@@ -39,7 +43,7 @@ fn set_guild_data(guild_data: Map<String, Value>) {
     let mut guild_data_file = OpenOptions::new()
         .write(true)
         .truncate(true)
-        .open(GUILD_DATA_PATH)
+        .open(get_guild_data_path())
         .unwrap();
     guild_data_file
         .write_all(
