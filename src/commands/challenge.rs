@@ -107,10 +107,19 @@ fn to_fullwidth(string: &str) -> String {
 }
 
 fn rebuild_site() {
-    Command::new("hugo")
+    Command::new("./build.sh")
         .current_dir(get_hugo_path())
         .spawn()
         .expect("Failed to rebuild site");
+}
+
+#[command]
+#[owners_only]
+#[allow(non_snake_case)]
+async fn rebuildSite(ctx: &Context, msg: &Message) -> CommandResult {
+    rebuild_site();
+    msg.reply(&ctx.http, "Started site rebuild process!").await?;
+    Ok(())
 }
 
 #[command]

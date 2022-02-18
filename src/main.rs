@@ -50,6 +50,7 @@ impl EventHandler for Handler {
     jlpt,
     hyogai,
     so,
+    rebuildSite,
     challenge,
     submit,
     images,
