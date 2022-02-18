@@ -106,6 +106,13 @@ fn to_fullwidth(string: &str) -> String {
     fullwidth
 }
 
+fn rebuild_site() {
+    Command::new("hugo")
+        .current_dir(get_hugo_path())
+        .spawn()
+        .expect("Failed to rebuild site");
+}
+
 #[command]
 async fn challenge(ctx: &Context, msg: &Message) -> CommandResult {
     msg.reply(
@@ -148,7 +155,6 @@ async fn submit(ctx: &Context, msg: &Message) -> CommandResult {
             .await?;
         return Ok(());
     }
-    let hugo_path = get_hugo_path();
     let challenge_number = get_challenge_number();
     let submission_images_dir = get_submission_images_dir();
 
@@ -254,10 +260,7 @@ async fn submit(ctx: &Context, msg: &Message) -> CommandResult {
         if invalid_types {
             message.push_str("\nSome of your attachments could not be uploaded; only **.png**, **.jpg**, and **.jpeg** files are permitted.");
         }
-        Command::new("hugo")
-            .current_dir(&hugo_path)
-            .spawn()
-            .expect("Failed to rebuild site");
+        rebuild_site();
     } else if invalid_types {
         message.push_str("Sorry, your submission could not be uploaded; only **.png**, **.jpg**, and **.jpeg** files are permitted.");
     }
@@ -407,6 +410,7 @@ async fn imageDelete(ctx: &Context, msg: &Message, mut args: Args) -> CommandRes
             submission["images"] = images.into();
         }
         set_submission_data(submission_data);
+        rebuild_site();
         msg.reply(&ctx.http, message).await?;
         return Ok(());
     }
