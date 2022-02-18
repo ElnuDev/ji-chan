@@ -51,6 +51,7 @@ impl EventHandler for Handler {
     hyogai,
     so,
     rebuildSite,
+    pullAndRebuildSite,
     challenge,
     submit,
     images,
