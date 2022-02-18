@@ -125,12 +125,12 @@ async fn submit(ctx: &Context, msg: &Message) -> CommandResult {
     // there are large duplicated sections that need to be merged somehow.
     let guild_data = get_guild_data();
     let guild = msg.guild_id.unwrap().as_u64().to_string();
-    let current_guild_data = &guild_data[&guild].as_object().unwrap();
-    if !guild_data.contains_key(&guild) || !current_guild_data.contains_key("submissionChannel") {
+    if !guild_data.contains_key(&guild) || !&guild_data[&guild].as_object().unwrap().contains_key("submissionChannel") {
         msg.reply(&ctx.http, "Submissions aren't enabled for this server yet.")
-            .await?;
+        .await?;
         return Ok(());
     }
+    let current_guild_data = &guild_data[&guild].as_object().unwrap();
     let submission_channel = current_guild_data["submissionChannel"].as_str().unwrap();
     if submission_channel != &msg.channel_id.as_u64().to_string() {
         msg.reply(
