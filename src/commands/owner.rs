@@ -5,14 +5,14 @@ use serenity::prelude::*;
 use serde_json::json;
 use serde_json::Map;
 use serde_json::Value;
+use std::env;
 use std::fs::File;
 use std::fs::OpenOptions;
 use std::io::Read;
 use std::io::Write;
-use std::env;
 
-use crate::ShardManagerContainer;
 use crate::commands::challenge::get_challenge_number;
+use crate::ShardManagerContainer;
 
 fn get_guild_data_path() -> String {
     env::var("GUILD_DATA").unwrap()
@@ -93,7 +93,11 @@ async fn setSubmissionChannel(ctx: &Context, msg: &Message) -> CommandResult {
     set_guild_data(guild_data);
     msg.reply(
         &ctx.http,
-        format!("Submission channel for **{}** set to <#{}>.", msg.guild(&ctx).await.unwrap().name, msg.channel_id),
+        format!(
+            "Submission channel for **{}** set to <#{}>.",
+            msg.guild(&ctx).await.unwrap().name,
+            msg.channel_id
+        ),
     )
     .await?;
     Ok(())
@@ -107,7 +111,8 @@ async fn setAnnouncementRole(ctx: &Context, msg: &Message, mut args: Args) -> Co
     match args.single::<u64>() {
         Ok(id) => role = id.to_string(),
         Err(_) => {
-            msg.reply(&ctx.http, "Please provide an announcement role ID.").await?;
+            msg.reply(&ctx.http, "Please provide an announcement role ID.")
+                .await?;
             return Ok(());
         }
     }
@@ -137,27 +142,47 @@ async fn send(ctx: &Context, msg: &Message, message: &str, ping: bool, pin: bool
         if !data.contains_key("submissionChannel") {
             continue;
         }
-        let channel = ChannelId(data["submissionChannel"].as_str().unwrap().parse::<u64>().unwrap());
+        let channel = ChannelId(
+            data["submissionChannel"]
+                .as_str()
+                .unwrap()
+                .parse::<u64>()
+                .unwrap(),
+        );
         let mut message_to_send = String::from("");
         if ping && data.contains_key("announcementRole") {
-            message_to_send.push_str(&format!("<@&{}> ", data["announcementRole"].as_str().unwrap()));
+            message_to_send.push_str(&format!(
+                "<@&{}> ",
+                data["announcementRole"].as_str().unwrap()
+            ));
         }
         message_to_send.push_str(message);
-        let sent_message = channel.send_message(&ctx.http, |e| {
-            e.content(message_to_send);
-            e
-        }).await.unwrap();
+        let sent_message = channel
+            .send_message(&ctx.http, |e| {
+                e.content(message_to_send);
+                e
+            })
+            .await
+            .unwrap();
         if pin {
             // No need to do anything on error,
             // it just means we don't have pin permissions
             match sent_message.pin(&ctx.http).await {
                 Ok(_) => (),
-                Err(_) => ()
+                Err(_) => (),
             };
         }
         announcements_count += 1;
     }
-    msg.reply(&ctx.http, format!("Announced to {} server{}!", announcements_count, if announcements_count == 1 { "" } else { "s" })).await?;
+    msg.reply(
+        &ctx.http,
+        format!(
+            "Announced to {} server{}!",
+            announcements_count,
+            if announcements_count == 1 { "" } else { "s" }
+        ),
+    )
+    .await?;
     Ok(())
 }
 

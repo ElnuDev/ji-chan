@@ -118,7 +118,8 @@ fn rebuild_site() {
 #[allow(non_snake_case)]
 async fn rebuildSite(ctx: &Context, msg: &Message) -> CommandResult {
     rebuild_site();
-    msg.reply(&ctx.http, "Started site rebuild process!").await?;
+    msg.reply(&ctx.http, "Started site rebuild process!")
+        .await?;
     Ok(())
 }
 
@@ -133,7 +134,8 @@ async fn pullAndRebuildSite(ctx: &Context, msg: &Message) -> CommandResult {
         .expect("Failed to git pull")
         .wait()?;
     rebuild_site();
-    msg.reply(&ctx.http, "Pulled and started site rebuild process!").await?;
+    msg.reply(&ctx.http, "Pulled and started site rebuild process!")
+        .await?;
     Ok(())
 }
 
@@ -156,9 +158,14 @@ async fn submit(ctx: &Context, msg: &Message) -> CommandResult {
     // there are large duplicated sections that need to be merged somehow.
     let guild_data = get_guild_data();
     let guild = msg.guild_id.unwrap().as_u64().to_string();
-    if !guild_data.contains_key(&guild) || !&guild_data[&guild].as_object().unwrap().contains_key("submissionChannel") {
+    if !guild_data.contains_key(&guild)
+        || !&guild_data[&guild]
+            .as_object()
+            .unwrap()
+            .contains_key("submissionChannel")
+    {
         msg.reply(&ctx.http, "Submissions aren't enabled for this server yet.")
-        .await?;
+            .await?;
         return Ok(());
     }
     let current_guild_data = &guild_data[&guild].as_object().unwrap();
