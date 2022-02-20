@@ -3,6 +3,7 @@ use serenity::model::prelude::*;
 use serenity::prelude::*;
 
 use serde_json::Value;
+use serde_json::Map;
 use std::fs::File;
 use std::io::Read;
 
@@ -36,12 +37,12 @@ async fn display_kanji(ctx: &Context, msg: &Message, kanji: char, comment: &str)
     Ok(())
 }
 
-fn get_lists_data() -> Value {
+fn get_lists_data() -> Map<String, Value> {
     let mut lists_file = File::open("kanji_lists.json").unwrap();
     let mut lists_json = String::new();
     lists_file.read_to_string(&mut lists_json).unwrap();
     let lists_data: Value = serde_json::from_str(&lists_json).unwrap();
-    lists_data
+    lists_data.as_object().unwrap().clone()
 }
 
 async fn random_kanji(
