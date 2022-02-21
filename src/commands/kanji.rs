@@ -117,7 +117,12 @@ async fn i(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
             character, character, kanji_info
         ));
     }
-    message = format!("Found {} kanji{}\n{}", found_chars.len(), if found_chars.len() == 0 { "." } else { ":" }, message);
+    message = format!(
+        "Found {} kanji{}\n{}",
+        found_chars.len(),
+        if found_chars.len() == 0 { "." } else { ":" },
+        message
+    );
     if skipped_chars > 0 {
         message.push_str(&format!(
             "Skipped {} character{}.",
