@@ -96,26 +96,11 @@ fn get_kanji_info(kanji: char) -> String {
 #[command]
 async fn i(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
     let input = args.rest();
-    // chars must be mutable because it is an iterator
-    let mut chars = input.chars();
-    if input.len() == 1 {
-        let kanji_info = get_kanji_info(chars.next().unwrap());
-        msg.reply(
-            &ctx.http,
-            if kanji_info.len() == 0 {
-                "Couldn't find that character in any kanji list!"
-            } else {
-                &kanji_info
-            },
-        )
-        .await
-        .unwrap();
-        return Ok(());
-    }
+    let chars = input.chars();
     let mut message = String::from("");
     let mut covered_chars: Vec<char> = Vec::new();
     let mut skipped_chars = 0;
-    let mut found_chars = 0;
+    let mut found_chars: Vec<char> = Vec::new();
     for character in chars {
         if covered_chars.contains(&character) {
             continue;
@@ -126,16 +111,16 @@ async fn i(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
             skipped_chars += 1;
             continue;
         }
-        found_chars += 1;
+        found_chars.push(character);
         message.push_str(&format!(
             "[{}](https://jisho.org/search/{}%23kanji): {}\n",
             character, character, kanji_info
         ));
     }
-    message = format!("Found {} kanji:\n{}", found_chars, message);
+    message = format!("Found {} kanji{}\n{}", found_chars.len(), if found_chars.len() == 0 { "." } else { ":" }, message);
     if skipped_chars > 0 {
         message.push_str(&format!(
-            "Skipped {} character{} that I couldn't find in any kanji list!",
+            "Skipped {} character{}.",
             skipped_chars,
             if skipped_chars == 1 { "" } else { "s" }
         ));
@@ -157,8 +142,8 @@ async fn i(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
                     .url("https://github.com/ElnuDev/ji-chan");
                 e.set_author(author);
                 e.color(serenity::utils::Colour::from_rgb(251, 73, 52));
-                if input.chars().count() == 1 {
-                    e.thumbnail(get_so_diagram(input.chars().next().unwrap()));
+                if found_chars.len() == 1 {
+                    e.thumbnail(get_so_diagram(found_chars[0]));
                 }
                 e
             });

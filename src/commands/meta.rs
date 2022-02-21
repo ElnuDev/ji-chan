@@ -19,6 +19,7 @@ __**Tegaki Tuesday 手書きの火曜日**__
 :wastebasket: `{p}imageDelete <image number>` Delete images from your current submission using image numbers from -h images.
 
 __**Kanji 漢字**__
+:information_source: `{p}i <text>` Get category information and links to Jisho for character(s), along with with stroke a order diagram for single characters.
 :paintbrush: `{p}so <text>` Get stroke order diagrams for character(s), maximum 4
 :game_die: `{p}jinmeiyo` Random Jinmeiyō kanji
 :game_die: `{p}joyo` Random Jōyō kanji
