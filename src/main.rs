@@ -44,6 +44,7 @@ impl EventHandler for Handler {
 
 #[group]
 #[commands(
+    i,
     joyo,
     jinmeiyo,
     kyoiku,

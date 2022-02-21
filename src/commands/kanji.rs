@@ -13,13 +13,17 @@ fn random_from_string(string: &str) -> char {
     string.chars().choose(&mut rand::thread_rng()).unwrap()
 }
 
+fn get_so_diagram(kanji: char) -> String {
+    format!(
+        "https://raw.githubusercontent.com/mistval/kanji_images/master/gifs/{}.gif",
+        format!("{:x}", kanji as i32)
+    )
+}
+
 async fn display_kanji(ctx: &Context, msg: &Message, kanji: char, comment: &str) -> CommandResult {
     msg.reply(&ctx.http, format!("{}{}", kanji, comment))
         .await?;
-    let url = format!(
-        "https://raw.githubusercontent.com/mistval/kanji_images/master/gifs/{}.gif",
-        format!("{:x}", kanji as i32)
-    );
+    let url = get_so_diagram(kanji);
     let client = reqwest::Client::new();
     let request = client.head(&url).build().unwrap();
     let response = client.execute(request).await?.status();
@@ -43,6 +47,109 @@ fn get_lists_data() -> Map<String, Value> {
     lists_file.read_to_string(&mut lists_json).unwrap();
     let lists_data: Value = serde_json::from_str(&lists_json).unwrap();
     lists_data.as_object().unwrap().clone()
+}
+
+fn get_kanji_info(kanji: char) -> String {
+    let lists_data = get_lists_data();
+    let mut info = String::from("");
+    for category_name in lists_data.keys() {
+        let category = &lists_data[category_name];
+        let default_version = category["default"].as_str().unwrap();
+        match &category["versions"][default_version]["characters"].as_str() {
+            // if no variants (string)
+            Some(list) => {
+                if list.contains(kanji) {
+                    info.push_str(&format!("**{}**, ", category_name));
+                }
+            },
+            // if variants (map)
+            None => {
+                let variants = &category["versions"][default_version]["characters"].as_object().unwrap();
+                let mut in_variants = false;
+                for variant in variants.keys() {
+                    let list = variants[variant].as_str().unwrap();
+                    if list.contains(kanji) {
+                        if !in_variants {
+                            info.push_str(&format!("**{}** (", category_name));
+                            in_variants = true;
+                        }
+                        info.push_str(&format!("{}, ", variant));
+                    }
+                }
+                if in_variants {
+                    // Remove last two characters (comma and space)
+                    info.pop();
+                    info.pop();
+                    info.push_str("), ");
+                }
+            }
+        };
+    }
+    // Remove last two characters again
+    info.pop();
+    info.pop();
+    info
+}
+
+#[command]
+async fn i(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
+    let input = args.rest();
+    // chars must be mutable because it is an iterator
+    let mut chars = input.chars();
+    if input.len() == 1 {
+        let kanji_info = get_kanji_info(chars.next().unwrap());
+        msg.reply(&ctx.http, if kanji_info.len() == 0 {
+            "Couldn't find that character in any kanji list!"
+        } else {
+            &kanji_info
+        }).await.unwrap();
+        return Ok(());
+    }
+    let mut message = String::from("");
+    let mut covered_chars: Vec<char> = Vec::new();
+    let mut skipped_chars = 0;
+    let mut found_chars = 0;
+    for character in chars {
+        if covered_chars.contains(&character) {
+            continue;
+        }
+        let kanji_info =  get_kanji_info(character);
+        covered_chars.push(character);
+        if kanji_info.len() == 0 {
+            skipped_chars += 1;
+            continue;
+        }
+        found_chars += 1;
+        message.push_str(&format!("[{}](https://jisho.org/search/{}%23kanji): {}\n", character, character, kanji_info));
+    }
+    message = format!("Found {} kanji:\n{}", found_chars, message);
+    if skipped_chars > 0 {
+        message.push_str(&format!("Skipped {} character{} that I couldn't find in any kanji list!", skipped_chars, if skipped_chars == 1 { "" } else { "s" }));
+    }
+    msg.channel_id.send_message(&ctx.http, |m| {
+        m.reference_message(msg);
+        m.allowed_mentions(|am| {
+            am.empty_parse();
+            am
+        });
+        m.embed(|e| {
+            e.title(input);
+            e.description(message);
+            let mut author = serenity::builder::CreateEmbedAuthor::default();
+            author
+                .icon_url("https://raw.githubusercontent.com/ElnuDev/ji-chan/main/ji-chan.png")
+                .name("字ちゃん")
+                .url("https://github.com/ElnuDev/ji-chan");
+            e.set_author(author);
+            e.color(serenity::utils::Colour::from_rgb(251, 73, 52));
+            if input.chars().count() == 1 {
+                e.thumbnail(get_so_diagram(input.chars().next().unwrap()));
+            }
+            e
+        });
+        m
+    }).await.unwrap();
+    Ok(())
 }
 
 async fn random_kanji(
