@@ -197,7 +197,7 @@ async fn announce(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
 #[allow(non_snake_case)]
 async fn announceChallenge(ctx: &Context, msg: &Message) -> CommandResult {
     let challenge_number = get_challenge_number();
-    let message = format!("Welcome to the **{n}{th}** weekly **Tegaki Tuesday** (手書きの火曜日) handwriting challenge! :pen_fountain: The prompt is available in both Japanese and English on the website at <https://tegakituesday/{n}>.
+    let message = format!("Welcome to the **{n}{th}** weekly **Tegaki Tuesday** (手書きの火曜日) handwriting challenge! :pen_fountain: The prompt is available in both Japanese and English on the website at <https://tegakituesday.com/{n}>.
 
 You can make submissions in both languages, but please submit in your target language first. Submissions can be submitted by uploading the image to this channel along with the `{p}submit` command. By submitting, you agree to having your work posted to the website under the Attribution-ShareAlike 4.0 Unported (CC BY-SA 4.0) license, attributed to your Discord account. (<https://creativecommons.org/licenses/by-sa/4.0>).",
         n = challenge_number,
