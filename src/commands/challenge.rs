@@ -1,6 +1,7 @@
 use serenity::framework::standard::{macros::command, Args, CommandResult};
 use serenity::model::prelude::*;
 use serenity::prelude::*;
+use serenity::http::typing::Typing;
 
 use std::env;
 use std::fs;
@@ -186,6 +187,7 @@ async fn submit(ctx: &Context, msg: &Message) -> CommandResult {
             .await?;
         return Ok(());
     }
+    let typing = Typing::start(ctx.http.clone(), *msg.channel_id.as_u64()).unwrap();
     let challenge_number = get_challenge_number();
     let submission_images_dir = get_submission_images_dir();
 
@@ -295,6 +297,7 @@ async fn submit(ctx: &Context, msg: &Message) -> CommandResult {
     } else if invalid_types {
         message.push_str("Sorry, your submission could not be uploaded; only **.png**, **.jpg**, and **.jpeg** files are permitted.");
     }
+    typing.stop();
     msg.reply(&ctx.http, message).await?;
     Ok(())
 }
