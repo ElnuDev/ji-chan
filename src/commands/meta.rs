@@ -1,6 +1,7 @@
 use serenity::framework::standard::{macros::command, CommandResult};
 use serenity::model::prelude::*;
 use serenity::prelude::*;
+use serenity::framework::standard::macros::hook;
 
 use std::env;
 
@@ -30,4 +31,13 @@ __**Kanji 漢字**__
     );
     msg.reply(&ctx.http, message).await?;
     Ok(())
+}
+
+#[hook]
+pub async fn unrecognised_command_hook(
+    ctx: &Context,
+    msg: &Message,
+    unrecognised_command_name: &str,
+) {
+    msg.reply(&ctx.http, &format!("I don't understand the command '{}'. For a list of commands, see `{}help`. Commands are case-sensitive.", unrecognised_command_name, env::var("PREFIX").unwrap())).await.unwrap();
 }

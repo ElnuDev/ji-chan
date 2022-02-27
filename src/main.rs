@@ -97,7 +97,8 @@ async fn main() {
     // Create the framework
     let framework = StandardFramework::new()
         .configure(|c| c.owners(owners).prefix(prefix))
-        .group(&GENERAL_GROUP);
+        .group(&GENERAL_GROUP)
+        .unrecognised_command(commands::meta::unrecognised_command_hook);
 
     let mut client = Client::builder(&token)
         .framework(framework)
