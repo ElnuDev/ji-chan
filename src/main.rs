@@ -14,7 +14,6 @@ use std::{collections::HashSet, env, sync::Arc};
 
 use commands::{challenge::*, kanji::*, meta::*, owner::*};
 use serenity::model::gateway::Activity;
-use serenity::model::gateway::ActivityEmoji;
 use serenity::{
     async_trait,
     client::bridge::gateway::ShardManager,
