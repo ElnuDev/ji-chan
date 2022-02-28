@@ -13,6 +13,8 @@ mod commands;
 use std::{collections::HashSet, env, sync::Arc};
 
 use commands::{challenge::*, kanji::*, meta::*, owner::*};
+use serenity::model::gateway::Activity;
+use serenity::model::gateway::ActivityEmoji;
 use serenity::{
     async_trait,
     client::bridge::gateway::ShardManager,
@@ -33,8 +35,10 @@ struct Handler;
 
 #[async_trait]
 impl EventHandler for Handler {
-    async fn ready(&self, _: Context, ready: Ready) {
+    async fn ready(&self, ctx: Context, ready: Ready) {
         info!("Connected as {}", ready.user.name);
+        let activity = Activity::watching("for new submissions");
+        ctx.set_activity(activity).await;
     }
 
     async fn resume(&self, _: Context, _: ResumedEvent) {
