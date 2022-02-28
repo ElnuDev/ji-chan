@@ -12,6 +12,7 @@ use std::io::Read;
 use std::io::Write;
 
 use crate::commands::challenge::get_challenge_number;
+use crate::commands::challenge::rebuild_site;
 use crate::ShardManagerContainer;
 
 fn get_guild_data_path() -> String {
@@ -210,4 +211,14 @@ You can make submissions in both languages, but please submit in your target lan
         p = env::var("PREFIX").unwrap()
     );
     send(ctx, msg, &message, true, true).await
+}
+
+#[command]
+#[owners_only]
+#[allow(non_snake_case)]
+async fn rebuildSite(ctx: &Context, msg: &Message) -> CommandResult {
+    rebuild_site();
+    msg.reply(&ctx.http, "Started site rebuild process!")
+        .await?;
+    Ok(())
 }

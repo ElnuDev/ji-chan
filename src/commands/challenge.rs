@@ -107,37 +107,11 @@ fn to_fullwidth(string: &str) -> String {
     fullwidth
 }
 
-fn rebuild_site() {
+pub fn rebuild_site() {
     Command::new("./build.sh")
         .current_dir(get_hugo_path())
         .spawn()
         .expect("Failed to rebuild site");
-}
-
-#[command]
-#[owners_only]
-#[allow(non_snake_case)]
-async fn rebuildSite(ctx: &Context, msg: &Message) -> CommandResult {
-    rebuild_site();
-    msg.reply(&ctx.http, "Started site rebuild process!")
-        .await?;
-    Ok(())
-}
-
-#[command]
-#[owners_only]
-#[allow(non_snake_case)]
-async fn pullAndRebuildSite(ctx: &Context, msg: &Message) -> CommandResult {
-    Command::new("git")
-        .current_dir(get_hugo_path())
-        .arg("pull")
-        .spawn()
-        .expect("Failed to git pull")
-        .wait()?;
-    rebuild_site();
-    msg.reply(&ctx.http, "Pulled and started site rebuild process!")
-        .await?;
-    Ok(())
 }
 
 #[command]
