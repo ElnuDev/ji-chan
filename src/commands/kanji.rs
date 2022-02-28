@@ -1,7 +1,7 @@
+use crate::utils::*;
 use serenity::framework::standard::{macros::command, Args, CommandResult};
 use serenity::model::prelude::*;
 use serenity::prelude::*;
-use crate::utils::*;
 
 #[command]
 async fn i(ctx: &Context, msg: &Message, args: Args) -> CommandResult {

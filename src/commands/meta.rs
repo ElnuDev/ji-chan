@@ -1,7 +1,7 @@
+use serenity::framework::standard::macros::hook;
 use serenity::framework::standard::{macros::command, CommandResult};
 use serenity::model::prelude::*;
 use serenity::prelude::*;
-use serenity::framework::standard::macros::hook;
 
 use std::env;
 

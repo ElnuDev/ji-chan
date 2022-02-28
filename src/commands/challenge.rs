@@ -1,15 +1,15 @@
+use crate::utils::*;
+use serde_json::Map;
 use serenity::framework::standard::{macros::command, Args, CommandResult};
+use serenity::http::typing::Typing;
 use serenity::model::prelude::*;
 use serenity::prelude::*;
-use serenity::http::typing::Typing;
+use slug::slugify;
 use std::env;
 use std::fs;
-use serde_json::Map;
 use std::fs::File;
 use std::io::Write;
 use std::path::Path;
-use slug::slugify;
-use crate::utils::*;
 
 #[command]
 async fn challenge(ctx: &Context, msg: &Message) -> CommandResult {

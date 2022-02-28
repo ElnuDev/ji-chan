@@ -1,16 +1,16 @@
+use rand::seq::IteratorRandom;
+use serde_json::Map;
+use serde_json::Value;
 use serenity::framework::standard::{Args, CommandResult};
 use serenity::model::prelude::*;
 use serenity::prelude::*;
+use std::env;
 use std::fs;
-use serde_json::Map;
-use serde_json::Value;
 use std::fs::File;
 use std::fs::OpenOptions;
 use std::io::Read;
 use std::io::Write;
 use std::process::Command;
-use rand::seq::IteratorRandom;
-use std::env;
 
 pub fn get_challenge_number() -> i32 {
     let challenge_dir = format!("{}/content/challenges", env::var("HUGO").unwrap());
@@ -107,7 +107,6 @@ pub fn rebuild_site() {
         .expect("Failed to rebuild site");
 }
 
-
 pub fn get_guild_data_path() -> String {
     env::var("GUILD_DATA").unwrap()
 }
@@ -148,7 +147,13 @@ pub fn set_guild_data(guild_data: Map<String, Value>) {
         .unwrap();
 }
 
-pub async fn send(ctx: &Context, msg: &Message, message: &str, ping: bool, pin: bool) -> CommandResult {
+pub async fn send(
+    ctx: &Context,
+    msg: &Message,
+    message: &str,
+    ping: bool,
+    pin: bool,
+) -> CommandResult {
     let guild_data = get_guild_data();
     let mut announcements_count = 0;
     for (_guild, data) in guild_data.iter() {
@@ -211,8 +216,12 @@ pub fn get_so_diagram(kanji: char) -> String {
     )
 }
 
-
-pub async fn display_kanji(ctx: &Context, msg: &Message, kanji: char, comment: &str) -> CommandResult {
+pub async fn display_kanji(
+    ctx: &Context,
+    msg: &Message,
+    kanji: char,
+    comment: &str,
+) -> CommandResult {
     msg.reply(&ctx.http, format!("{}{}", kanji, comment))
         .await?;
     let url = get_so_diagram(kanji);
