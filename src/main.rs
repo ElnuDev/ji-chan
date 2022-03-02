@@ -9,10 +9,12 @@
 //! features = ["framework", "standard_framework"]
 //! ```
 mod commands;
+mod utils;
 
 use std::{collections::HashSet, env, sync::Arc};
 
 use commands::{challenge::*, kanji::*, meta::*, owner::*};
+use serenity::model::gateway::Activity;
 use serenity::{
     async_trait,
     client::bridge::gateway::ShardManager,
@@ -33,8 +35,10 @@ struct Handler;
 
 #[async_trait]
 impl EventHandler for Handler {
-    async fn ready(&self, _: Context, ready: Ready) {
+    async fn ready(&self, ctx: Context, ready: Ready) {
         info!("Connected as {}", ready.user.name);
+        let activity = Activity::watching("for new submissions");
+        ctx.set_activity(activity).await;
     }
 
     async fn resume(&self, _: Context, _: ResumedEvent) {
@@ -52,7 +56,6 @@ impl EventHandler for Handler {
     hyogai,
     so,
     rebuildSite,
-    pullAndRebuildSite,
     challenge,
     submit,
     images,
@@ -97,7 +100,8 @@ async fn main() {
     // Create the framework
     let framework = StandardFramework::new()
         .configure(|c| c.owners(owners).prefix(prefix))
-        .group(&GENERAL_GROUP);
+        .group(&GENERAL_GROUP)
+        .unrecognised_command(commands::meta::unrecognised_command_hook);
 
     let mut client = Client::builder(&token)
         .framework(framework)

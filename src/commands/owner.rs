@@ -3,56 +3,10 @@ use serenity::model::prelude::*;
 use serenity::prelude::*;
 
 use serde_json::json;
-use serde_json::Map;
-use serde_json::Value;
 use std::env;
-use std::fs::File;
-use std::fs::OpenOptions;
-use std::io::Read;
-use std::io::Write;
 
-use crate::commands::challenge::get_challenge_number;
+use crate::utils::*;
 use crate::ShardManagerContainer;
-
-fn get_guild_data_path() -> String {
-    env::var("GUILD_DATA").unwrap()
-}
-
-pub fn get_guild_data() -> Map<String, Value> {
-    let guild_data_path = get_guild_data_path();
-    let guild_data_json = match File::open(&guild_data_path) {
-        Ok(mut file) => {
-            let mut json = String::new();
-            file.read_to_string(&mut json).unwrap();
-            json
-        }
-        Err(ref e) if e.kind() == std::io::ErrorKind::NotFound => {
-            let mut file = File::create(&guild_data_path).unwrap();
-            file.write_all(b"{}").unwrap();
-            file.flush().unwrap();
-            String::from("{}")
-        }
-        Err(_) => panic!("Failed to open guild data file"),
-    };
-    let mut submission_data: Value = serde_json::from_str(&guild_data_json).unwrap();
-    submission_data.as_object_mut().unwrap().clone()
-}
-
-fn set_guild_data(guild_data: Map<String, Value>) {
-    let guild_data: Value = guild_data.into();
-    let mut guild_data_file = OpenOptions::new()
-        .write(true)
-        .truncate(true)
-        .open(get_guild_data_path())
-        .unwrap();
-    guild_data_file
-        .write_all(
-            serde_json::to_string_pretty(&guild_data)
-                .unwrap()
-                .as_bytes(),
-        )
-        .unwrap();
-}
 
 #[command]
 #[owners_only]
@@ -134,58 +88,6 @@ async fn setAnnouncementRole(ctx: &Context, msg: &Message, mut args: Args) -> Co
     Ok(())
 }
 
-async fn send(ctx: &Context, msg: &Message, message: &str, ping: bool, pin: bool) -> CommandResult {
-    let guild_data = get_guild_data();
-    let mut announcements_count = 0;
-    for (_guild, data) in guild_data.iter() {
-        let data = data.as_object().unwrap();
-        if !data.contains_key("submissionChannel") {
-            continue;
-        }
-        let channel = ChannelId(
-            data["submissionChannel"]
-                .as_str()
-                .unwrap()
-                .parse::<u64>()
-                .unwrap(),
-        );
-        let mut message_to_send = String::from("");
-        if ping && data.contains_key("announcementRole") {
-            message_to_send.push_str(&format!(
-                "<@&{}> ",
-                data["announcementRole"].as_str().unwrap()
-            ));
-        }
-        message_to_send.push_str(message);
-        let sent_message = channel
-            .send_message(&ctx.http, |e| {
-                e.content(message_to_send);
-                e
-            })
-            .await
-            .unwrap();
-        if pin {
-            // No need to do anything on error,
-            // it just means we don't have pin permissions
-            match sent_message.pin(&ctx.http).await {
-                Ok(_) => (),
-                Err(_) => (),
-            };
-        }
-        announcements_count += 1;
-    }
-    msg.reply(
-        &ctx.http,
-        format!(
-            "Announced to {} server{}!",
-            announcements_count,
-            if announcements_count == 1 { "" } else { "s" }
-        ),
-    )
-    .await?;
-    Ok(())
-}
-
 #[command]
 #[owners_only]
 async fn announce(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
@@ -210,4 +112,14 @@ You can make submissions in both languages, but please submit in your target lan
         p = env::var("PREFIX").unwrap()
     );
     send(ctx, msg, &message, true, true).await
+}
+
+#[command]
+#[owners_only]
+#[allow(non_snake_case)]
+async fn rebuildSite(ctx: &Context, msg: &Message) -> CommandResult {
+    rebuild_site();
+    msg.reply(&ctx.http, "Started site rebuild process!")
+        .await?;
+    Ok(())
 }

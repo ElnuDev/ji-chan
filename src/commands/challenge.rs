@@ -1,143 +1,15 @@
 use serenity::framework::standard::{macros::command, Args, CommandResult};
 use serenity::model::prelude::*;
 use serenity::prelude::*;
-
+use serenity::http::typing::Typing;
 use std::env;
 use std::fs;
-
 use serde_json::Map;
-use serde_json::Value;
 use std::fs::File;
-use std::fs::OpenOptions;
-use std::io::Read;
 use std::io::Write;
 use std::path::Path;
-use std::process::Command;
-
 use slug::slugify;
-
-use crate::commands::owner::get_guild_data;
-
-pub fn get_challenge_number() -> i32 {
-    let challenge_dir = format!("{}/content/challenges", env::var("HUGO").unwrap());
-    let paths = fs::read_dir(challenge_dir).unwrap();
-    let mut max = 0;
-    for path in paths {
-        let number = path
-            .unwrap()
-            .path()
-            .file_stem()
-            .unwrap()
-            .to_str()
-            .unwrap()
-            .parse::<i32>()
-            .unwrap();
-        if number > max {
-            max = number;
-        }
-    }
-    max
-}
-
-fn get_hugo_path() -> String {
-    env::var("HUGO").unwrap()
-}
-
-fn get_submission_images_dir() -> String {
-    format!("{}/assets/{}", get_hugo_path(), get_challenge_number())
-}
-
-fn get_submission_data_path() -> String {
-    format!(
-        "{}/data/challenges/{}.json",
-        get_hugo_path(),
-        get_challenge_number()
-    )
-}
-
-fn get_submission_data() -> Vec<Value> {
-    let submission_data_path = get_submission_data_path();
-    let submission_data_json = match File::open(&submission_data_path) {
-        Ok(mut file) => {
-            let mut json = String::new();
-            file.read_to_string(&mut json).unwrap();
-            json
-        }
-        Err(ref e) if e.kind() == std::io::ErrorKind::NotFound => {
-            let mut file = File::create(&submission_data_path).unwrap();
-            file.write_all(b"[]").unwrap();
-            file.flush().unwrap();
-            String::from("[]")
-        }
-        Err(_) => panic!("Failed to open submission data file"),
-    };
-    let mut submission_data: Value = serde_json::from_str(&submission_data_json).unwrap();
-    submission_data.as_array_mut().unwrap().clone()
-}
-
-fn set_submission_data(submission_data: Vec<Value>) {
-    let submission_data: Value = submission_data.into();
-    let mut submission_data_file = OpenOptions::new()
-        .write(true)
-        .truncate(true)
-        .open(get_submission_data_path())
-        .unwrap();
-    submission_data_file
-        .write_all(
-            serde_json::to_string_pretty(&submission_data)
-                .unwrap()
-                .as_bytes(),
-        )
-        .unwrap();
-}
-
-fn is_matching_submission(submission: &Value, msg: &Message) -> bool {
-    submission["id"].as_str().unwrap() == msg.author.id.as_u64().to_string()
-}
-
-fn to_fullwidth(string: &str) -> String {
-    let mut fullwidth = String::new();
-    for character in string.chars() {
-        fullwidth.push(match unicode_hfwidth::to_fullwidth(character) {
-            Some(character) => character,
-            None => character,
-        });
-    }
-    fullwidth
-}
-
-fn rebuild_site() {
-    Command::new("./build.sh")
-        .current_dir(get_hugo_path())
-        .spawn()
-        .expect("Failed to rebuild site");
-}
-
-#[command]
-#[owners_only]
-#[allow(non_snake_case)]
-async fn rebuildSite(ctx: &Context, msg: &Message) -> CommandResult {
-    rebuild_site();
-    msg.reply(&ctx.http, "Started site rebuild process!")
-        .await?;
-    Ok(())
-}
-
-#[command]
-#[owners_only]
-#[allow(non_snake_case)]
-async fn pullAndRebuildSite(ctx: &Context, msg: &Message) -> CommandResult {
-    Command::new("git")
-        .current_dir(get_hugo_path())
-        .arg("pull")
-        .spawn()
-        .expect("Failed to git pull")
-        .wait()?;
-    rebuild_site();
-    msg.reply(&ctx.http, "Pulled and started site rebuild process!")
-        .await?;
-    Ok(())
-}
+use crate::utils::*;
 
 #[command]
 async fn challenge(ctx: &Context, msg: &Message) -> CommandResult {
@@ -186,6 +58,7 @@ async fn submit(ctx: &Context, msg: &Message) -> CommandResult {
             .await?;
         return Ok(());
     }
+    let typing = Typing::start(ctx.http.clone(), *msg.channel_id.as_u64()).unwrap();
     let challenge_number = get_challenge_number();
     let submission_images_dir = get_submission_images_dir();
 
@@ -295,6 +168,7 @@ async fn submit(ctx: &Context, msg: &Message) -> CommandResult {
     } else if invalid_types {
         message.push_str("Sorry, your submission could not be uploaded; only **.png**, **.jpg**, and **.jpeg** files are permitted.");
     }
+    typing.stop();
     msg.reply(&ctx.http, message).await?;
     Ok(())
 }
