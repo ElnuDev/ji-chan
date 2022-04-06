@@ -91,7 +91,7 @@ async fn setAnnouncementRole(ctx: &Context, msg: &Message, mut args: Args) -> Co
 #[command]
 #[owners_only]
 async fn announce(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
-    send(ctx, msg, args.rest(), true, true).await
+    send(ctx, msg, args.rest(), true, false).await
 }
 
 #[command]
@@ -111,7 +111,7 @@ You can make submissions in both languages, but please submit in your target lan
         },
         p = env::var("PREFIX").unwrap()
     );
-    send(ctx, msg, &message, true, true).await
+    send(ctx, msg, &message, true, false).await
 }
 
 #[command]
