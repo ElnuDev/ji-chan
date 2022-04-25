@@ -67,11 +67,9 @@ async fn setSuggestionChannel(ctx: &Context, msg: &Message) -> CommandResult {
     set_guild_data(guild_data);
     msg.reply(
         &ctx.http,
-        format!(
-            "Submission channel set to <#{}>.",
-            msg.channel_id
-        ),
-    ).await?;
+        format!("Submission channel set to <#{}>.", msg.channel_id),
+    )
+    .await?;
     Ok(())
 }
 

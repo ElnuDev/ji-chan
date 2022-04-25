@@ -10,7 +10,10 @@ use serenity::{
     client::bridge::gateway::ShardManager,
     framework::{standard::macros::group, StandardFramework},
     http::Http,
-    model::{event::ResumedEvent, gateway::{Ready, GatewayIntents}},
+    model::{
+        event::ResumedEvent,
+        gateway::{GatewayIntents, Ready},
+    },
     prelude::*,
 };
 use tracing::{error, info};
