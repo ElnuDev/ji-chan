@@ -49,7 +49,7 @@ async fn setSubmissionChannel(ctx: &Context, msg: &Message) -> CommandResult {
         &ctx.http,
         format!(
             "Submission channel for **{}** set to <#{}>.",
-            msg.guild(&ctx).await.unwrap().name,
+            msg.guild(&ctx).unwrap().name,
             msg.channel_id
         ),
     )
