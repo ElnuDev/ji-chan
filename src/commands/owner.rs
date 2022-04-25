@@ -60,6 +60,24 @@ async fn setSubmissionChannel(ctx: &Context, msg: &Message) -> CommandResult {
 #[command]
 #[owners_only]
 #[allow(non_snake_case)]
+async fn setSuggestionChannel(ctx: &Context, msg: &Message) -> CommandResult {
+    let channel = msg.channel_id.as_u64().to_string();
+    let mut guild_data = get_guild_data();
+    guild_data["suggestionChannel"] = channel.into();
+    set_guild_data(guild_data);
+    msg.reply(
+        &ctx.http,
+        format!(
+            "Submission channel set to <#{}>.",
+            msg.channel_id
+        ),
+    ).await?;
+    Ok(())
+}
+
+#[command]
+#[owners_only]
+#[allow(non_snake_case)]
 async fn setAnnouncementRole(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
     let role;
     match args.single::<u64>() {

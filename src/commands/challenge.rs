@@ -329,3 +329,48 @@ async fn imageDelete(ctx: &Context, msg: &Message, mut args: Args) -> CommandRes
     .await?;
     Ok(())
 }
+
+#[command]
+#[allow(non_snake_case)]
+async fn suggest(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
+    let guild_data = get_guild_data();
+    let channel = ChannelId(
+        guild_data["suggestionChannel"]
+            .as_str()
+            .unwrap()
+            .parse::<u64>()
+            .unwrap(),
+    );
+    // User::accent_colour is only available via the REST API
+    // If we just do msg.author.accent_colour here, we will get None
+    let accent_color = ctx.http
+        .get_user(*msg.author.id.as_u64())
+        .await.unwrap()
+        .accent_colour;
+    channel.send_message(&ctx.http, |m| {
+        m.allowed_mentions(|am| {
+            am.empty_parse();
+            am
+        });
+        m.embed(|e| {
+            let username = format!("{}#{}", msg.author.name, msg.author.discriminator);
+            e.title("New suggestion");
+            e.description(format!("{}\n\n[See original message]({}) ({})", args.rest(), msg.link(), msg.guild(&ctx).unwrap().name));
+            let mut author = serenity::builder::CreateEmbedAuthor::default();
+            author
+                .icon_url(format!("https://cdn.discordapp.com/avatars/{}/{}.webp", msg.author.id, msg.author.avatar.as_ref().unwrap()))
+                .name(username)
+                .url(format!("https://discord.com/users/{}", msg.author.id));
+            e.set_author(author);
+            if let Some(accent_color) = accent_color {
+                e.color(accent_color);
+            }
+            e
+        });
+        m
+    })
+    .await
+    .unwrap();
+    msg.reply(&ctx.http, "Suggestion sent! Thank you for making a suggestion. If it is chosen to be used in a future challenge, you will be mentioned in the challenge description!").await?;
+    Ok(())
+}

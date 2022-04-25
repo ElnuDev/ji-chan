@@ -53,7 +53,9 @@ impl EventHandler for Handler {
     help,
     sleep,
     setSubmissionChannel,
+    setSuggestionChannel,
     setAnnouncementRole,
+    suggest,
     announce,
     announceChallenge
 )]
