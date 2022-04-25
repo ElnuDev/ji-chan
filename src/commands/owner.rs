@@ -63,7 +63,11 @@ async fn setSubmissionChannel(ctx: &Context, msg: &Message) -> CommandResult {
 async fn setSuggestionChannel(ctx: &Context, msg: &Message) -> CommandResult {
     let channel = msg.channel_id.as_u64().to_string();
     let mut guild_data = get_guild_data();
-    guild_data["suggestionChannel"] = channel.into();
+    if guild_data.contains_key("submissionChannel") {
+        guild_data["suggestionChannel"] = channel.into();
+    } else {
+        guild_data.insert(String::from("suggestionChannel"), channel.into());
+    }
     set_guild_data(guild_data);
     msg.reply(
         &ctx.http,
