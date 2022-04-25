@@ -18,6 +18,7 @@ __**Tegaki Tuesday 手書きの火曜日**__
 :trophy: `{p}leaderboard` ~~View the community leaderboard and challenge stats!~~ **(Coming back soon)**
 :frame_photo: `{p}images` List images in your current submission, if available.
 :wastebasket: `{p}imageDelete <image number>` Delete images from your current submission using image numbers from -h images.
+:bulb: `{p}suggest <suggestion>` Make a suggestion for future challenge prompts!
 
 __**Kanji 漢字**__
 :information_source: `{p}i <text>` Get category information and links to Jisho for character(s), along with with stroke a order diagram for single characters.
