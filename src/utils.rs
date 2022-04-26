@@ -11,6 +11,7 @@ use std::fs::OpenOptions;
 use std::io::Read;
 use std::io::Write;
 use std::process::Command;
+use std::collections::HashMap;
 
 pub fn get_challenge_number() -> i32 {
     let challenge_dir = format!("{}/content/challenges", env::var("HUGO").unwrap());
@@ -41,16 +42,24 @@ pub fn get_submission_images_dir() -> String {
     format!("{}/assets/{}", get_hugo_path(), get_challenge_number())
 }
 
-pub fn get_submission_data_path() -> String {
+pub fn get_submission_data_path(challenge: i32) -> String {
     format!(
         "{}/data/challenges/{}.json",
         get_hugo_path(),
-        get_challenge_number()
+        challenge
     )
 }
 
-pub fn get_submission_data() -> Vec<Value> {
-    let submission_data_path = get_submission_data_path();
+pub fn get_current_submission_data_path() -> String {
+    get_submission_data_path(get_challenge_number())
+}
+
+pub fn get_current_submission_data() -> Vec<Value> {
+    get_submission_data(get_challenge_number())
+}
+
+pub fn get_submission_data(challenge: i32) -> Vec<Value> {
+    let submission_data_path = get_submission_data_path(challenge);
     let submission_data_json = match File::open(&submission_data_path) {
         Ok(mut file) => {
             let mut json = String::new();
@@ -74,7 +83,7 @@ pub fn set_submission_data(submission_data: Vec<Value>) {
     let mut submission_data_file = OpenOptions::new()
         .write(true)
         .truncate(true)
-        .open(get_submission_data_path())
+        .open(get_current_submission_data_path())
         .unwrap();
     submission_data_file
         .write_all(
@@ -362,5 +371,44 @@ pub async fn random_kanji(
             }
         }
     }
+    Ok(())
+}
+
+pub fn get_avatar(user: &User) -> String {
+    match user.avatar_url() {
+        Some(avatar_url) => avatar_url,
+        None => user.default_avatar_url()
+    }
+}
+
+pub async fn leaderboard(ctx: &Context) -> CommandResult {
+    const LENGTH: usize = 5;
+    let mut submission_counts: HashMap<String, u32> = HashMap::new();
+    for challenge in 1..get_challenge_number() + 1 {
+        let submission_data = get_submission_data(challenge);
+        for submission in submission_data.iter() {
+            let user = submission_counts.entry(String::from(submission.as_object().unwrap()["id"].as_str().unwrap())).or_insert(0);
+            *user += 1;
+        }
+    }
+    let mut top_submitters: Vec<(&String, &u32)> = submission_counts.iter().collect();
+    top_submitters.sort_by(|a, b| b.1.cmp(a.1));
+    let mut leaderboard_html = String::from("<table id=\"leaderboard\">");
+    for (i, (id, count)) in top_submitters[0..LENGTH].iter().enumerate() {
+        let place = i + 1;
+        let user = UserId(id.parse::<u64>().unwrap()).to_user(&ctx.http).await?;
+        let avatar = get_avatar(&user);
+        let profile = format!("https://discord.com/users/{id}");
+        let name = user.name;
+        let discriminator = user.discriminator;
+        leaderboard_html.push_str(&format!("<tr><td>{place}</td><td><img src=\"{avatar}\" alt=\"avatar\"></td><td><a href=\"{profile}\" target=\"_blank\">{name}<span class=\"muted\">#{discriminator}</span></a></td><td>{count}</td></tr>"));
+    }
+    leaderboard_html.push_str("</table>");
+    let mut file = std::fs::OpenOptions::new()
+        .write(true)
+        .open(env::var("LEADERBOARD").unwrap())
+        .unwrap();
+    file.write_all(leaderboard_html.as_bytes())?;
+    file.flush()?;
     Ok(())
 }

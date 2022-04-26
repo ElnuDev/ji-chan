@@ -66,7 +66,7 @@ async fn submit(ctx: &Context, msg: &Message) -> CommandResult {
     let path = Path::new(&submission_images_dir);
     std::fs::create_dir_all(path)?;
 
-    let mut submission_data = get_submission_data();
+    let mut submission_data = get_current_submission_data();
     let mut existing_submitter = false;
     let mut invalid_types = false;
     let mut requires_rebuild = false;
@@ -164,6 +164,7 @@ async fn submit(ctx: &Context, msg: &Message) -> CommandResult {
         if invalid_types {
             message.push_str("\nSome of your attachments could not be uploaded; only **.png**, **.jpg**, and **.jpeg** files are permitted.");
         }
+        leaderboard(&ctx).await?;
         rebuild_site();
     } else if invalid_types {
         message.push_str("Sorry, your submission could not be uploaded; only **.png**, **.jpg**, and **.jpeg** files are permitted.");
@@ -175,7 +176,7 @@ async fn submit(ctx: &Context, msg: &Message) -> CommandResult {
 
 #[command]
 async fn images(ctx: &Context, msg: &Message) -> CommandResult {
-    let submission_data = get_submission_data();
+    let submission_data = get_current_submission_data();
     let images: Vec<String> = {
         let mut images = Vec::new();
         for submission in submission_data.iter() {
@@ -237,7 +238,7 @@ async fn imageDelete(ctx: &Context, msg: &Message, mut args: Args) -> CommandRes
         return Ok(());
     }
     let challenge_number = get_challenge_number();
-    let mut submission_data = get_submission_data();
+    let mut submission_data = get_current_submission_data();
     for (i, submission) in submission_data.iter_mut().enumerate() {
         if !is_matching_submission(&submission, &msg) {
             continue;
@@ -366,11 +367,7 @@ async fn suggest(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
                 ));
                 let mut author = serenity::builder::CreateEmbedAuthor::default();
                 author
-                    .icon_url(format!(
-                        "https://cdn.discordapp.com/avatars/{}/{}.webp",
-                        msg.author.id,
-                        msg.author.avatar.as_ref().unwrap()
-                    ))
+                    .icon_url(get_avatar(&msg.author))
                     .name(username)
                     .url(format!("https://discord.com/users/{}", msg.author.id));
                 e.set_author(author);
