@@ -4,6 +4,7 @@ use serde_json::Value;
 use serenity::framework::standard::{Args, CommandResult};
 use serenity::model::prelude::*;
 use serenity::prelude::*;
+use std::collections::HashMap;
 use std::env;
 use std::fs;
 use std::fs::File;
@@ -11,7 +12,6 @@ use std::fs::OpenOptions;
 use std::io::Read;
 use std::io::Write;
 use std::process::Command;
-use std::collections::HashMap;
 
 pub fn get_challenge_number() -> i32 {
     let challenge_dir = format!("{}/content/challenges", env::var("HUGO").unwrap());
@@ -43,11 +43,7 @@ pub fn get_submission_images_dir() -> String {
 }
 
 pub fn get_submission_data_path(challenge: i32) -> String {
-    format!(
-        "{}/data/challenges/{}.json",
-        get_hugo_path(),
-        challenge
-    )
+    format!("{}/data/challenges/{}.json", get_hugo_path(), challenge)
 }
 
 pub fn get_current_submission_data_path() -> String {
@@ -377,7 +373,7 @@ pub async fn random_kanji(
 pub fn get_avatar(user: &User) -> String {
     match user.avatar_url() {
         Some(avatar_url) => avatar_url,
-        None => user.default_avatar_url()
+        None => user.default_avatar_url(),
     }
 }
 
@@ -387,7 +383,11 @@ pub async fn leaderboard(ctx: &Context) -> CommandResult {
     for challenge in 1..get_challenge_number() + 1 {
         let submission_data = get_submission_data(challenge);
         for submission in submission_data.iter() {
-            let user = submission_counts.entry(String::from(submission.as_object().unwrap()["id"].as_str().unwrap())).or_insert(0);
+            let user = submission_counts
+                .entry(String::from(
+                    submission.as_object().unwrap()["id"].as_str().unwrap(),
+                ))
+                .or_insert(0);
             *user += 1;
         }
     }
@@ -396,7 +396,9 @@ pub async fn leaderboard(ctx: &Context) -> CommandResult {
     let mut leaderboard_html = String::from("<table id=\"leaderboard\">");
     for (i, (id, count)) in top_submitters[0..LENGTH].iter().enumerate() {
         let place = i + 1;
-        let user = UserId(id.parse::<u64>().unwrap()).to_user(&ctx.http).await?;
+        let user = UserId(id.parse::<u64>().unwrap())
+            .to_user(&ctx.http)
+            .await?;
         let avatar = get_avatar(&user);
         let profile = format!("https://discord.com/users/{id}");
         let name = user.name;
