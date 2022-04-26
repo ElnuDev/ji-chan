@@ -378,7 +378,7 @@ pub fn get_avatar(user: &User) -> String {
 }
 
 pub async fn leaderboard(ctx: &Context) -> CommandResult {
-    const LENGTH: usize = 5;
+    const LENGTH: usize = 10;
     let mut submission_counts: HashMap<String, u32> = HashMap::new();
     for challenge in 1..get_challenge_number() + 1 {
         let submission_data = get_submission_data(challenge);
