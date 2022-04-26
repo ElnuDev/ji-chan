@@ -15,7 +15,6 @@ For more information about the challenge, check out the website at <https://tega
 __**Tegaki Tuesday 手書きの火曜日**__
 :ballot_box: `{p}submit` Submit to the latest handwriting challenge.
 :pencil: `{p}challenge` View the latest handwriting challenge info.
-:trophy: `{p}leaderboard` ~~View the community leaderboard and challenge stats!~~ **(Coming back soon)**
 :frame_photo: `{p}images` List images in your current submission, if available.
 :wastebasket: `{p}imageDelete <image number>` Delete images from your current submission using image numbers from -h images.
 :bulb: `{p}suggest <suggestion>` Make a suggestion for future challenge prompts!
