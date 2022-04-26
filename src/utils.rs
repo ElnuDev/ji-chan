@@ -407,6 +407,7 @@ pub async fn leaderboard(ctx: &Context) -> CommandResult {
     }
     leaderboard_html.push_str("</table>");
     let mut file = std::fs::OpenOptions::new()
+        .create(true)
         .write(true)
         .open(env::var("LEADERBOARD").unwrap())
         .unwrap();
