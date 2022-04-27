@@ -403,7 +403,7 @@ pub async fn leaderboard(ctx: &Context) -> CommandResult {
         let profile = format!("https://discord.com/users/{id}");
         let name = user.name;
         let discriminator = user.discriminator;
-        leaderboard_html.push_str(&format!("<tr><td>{place}</td><td><img src=\"{avatar}\" alt=\"avatar\"></td><td><a href=\"{profile}\" target=\"_blank\">{name}<span class=\"muted\">#{:0>4}</span></a></td><td>{count}</td></tr>", discriminator));
+        leaderboard_html.push_str(&format!("<tr><td>{place}</td><td><a href=\"{profile}\" target=\"_blank\" class=\"no-underline\"><img src=\"{avatar}\" alt=\"avatar\"> <span class=\"underline\">{name}<span class=\"muted\">#{:0>4}</span></span></a></td><td>{count}</td></tr>", discriminator));
     }
     leaderboard_html.push_str("</table>");
     let mut file = std::fs::OpenOptions::new()
